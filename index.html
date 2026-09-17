@@ -12,8 +12,8 @@
 <header class="topbar">
   <div>
     <h1>🪰 Fruit Fly Brain — 3D</h1>
-    <p>Fight a fly whose decisions are driven by a real FlyWire connectome simulation.</p>
-    <p id="brainStatus" class="muted">Loading 3D engine…</p>
+    <p>Browser-native 3D-style arena driven by a fly-connectome simulation.</p>
+    <p id="brainStatus" class="muted">Starting browser-native 3D renderer…</p>
   </div>
   <button id="reset" class="button">Reset</button>
 </header>
@@ -25,55 +25,34 @@
 </section>
 <section class="game-layout">
   <div class="arena-wrap">
-    <div id="game" aria-label="3D fruit fly game"></div>
-    <div class="help">WASD / arrows = move · Space / click = attack · R = reset</div>
+    <canvas id="game" aria-label="3D fruit fly game"></canvas>
+    <div class="help">WASD / arrows / touch pad = move · Space / tap ATTACK = attack · R = reset</div>
+    <div id="touchControls" class="touch-controls" aria-label="Touch controls">
+      <div class="dpad">
+        <button data-key="arrowup">▲</button>
+        <div><button data-key="arrowleft">◀</button><button data-key="arrowdown">▼</button><button data-key="arrowright">▶</button></div>
+      </div>
+      <button id="attackTouch" class="attack-touch">ATTACK</button>
+    </div>
     <div id="message" class="message hidden"></div>
   </div>
   <aside class="brain-lab">
     <h2>🧠 Live Fly Brain</h2>
-    <p class="muted">The game feeds sensory currents into the connectome and reads its neural population activity.</p>
+    <p class="muted">The game feeds sensory currents into the connectome and reads neural population activity.</p>
     <div class="telemetry"><b id="neurons">Waiting for brain…</b></div>
     <canvas id="brainCanvas" aria-label="Live neural population activity"></canvas>
-    <h3>What is actually running?</h3>
+    <h3>Connectome</h3>
     <ul>
       <li><b>139,255</b> FlyWire FAFB v783 neurons</li>
       <li><b>2,698,236</b> directed connections</li>
       <li>Leaky integrate-and-fire dynamics</li>
-      <li>Real measured wiring; game physics are a separate body layer</li>
+      <li>Brain simulation runs separately from the visual body</li>
     </ul>
-    <p class="science-note">This is connectome-driven, not a claim that every movement is biologically exact. The brain supplies the neural activity; the 3D body converts descending/population activity into game movement.</p>
+    <h3>Stonkfly-inspired model ideas</h3>
+    <p class="science-note">The Stonkfly project uses a much larger retained MaleCNS graph and wiring-constrained spiking dynamics. Its native implementation needs Python/C++ and several GB of data, so it cannot be copied directly into GitHub Pages. This browser game instead keeps the same useful separation: sensory input → spiking network → fixed population readout → body behavior.</p>
   </aside>
 </section>
 </main>
-<script>
-// Load Three.js with fallbacks, then start the game. This is deliberately a classic
-// browser build because it is more reliable on Android browsers than ES modules.
-(function(){
-  const status=document.getElementById('brainStatus');
-  const sources=[
-    'https://cdnjs.cloudflare.com/ajax/libs/three.js/r186/three.min.js',
-    'https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.min.js',
-    'https://unpkg.com/three@0.186.0/build/three.min.js'
-  ];
-  function load(i){
-    if(i>=sources.length){
-      status.textContent='3D engine could not load. Check your Android browser/network or disable strict content blocking.';
-      return;
-    }
-    status.textContent='Loading 3D engine… '+(i+1)+'/'+sources.length;
-    const s=document.createElement('script');
-    s.src=sources[i];
-    s.onload=function(){
-      if(window.THREE){
-        status.textContent='3D engine ready — starting game…';
-        const g=document.createElement('script');g.src='game.js';document.body.appendChild(g);
-      }else load(i+1);
-    };
-    s.onerror=function(){load(i+1)};
-    document.head.appendChild(s);
-  }
-  load(0);
-})();
-</script>
+<script src="game.js"></script>
 </body>
 </html>
