@@ -1,51 +1,14 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#090d18" />
-  <title>Fruit Fly Brain Game</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#07101b">
+<title>Fruit Fly Brain 3D</title><link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="app">
-    <header class="topbar">
-      <div>
-        <h1>🪰 Fruit Fly Brain Game</h1>
-        <p>Battle a fly controlled by a biologically inspired neural-state model.</p>
-      </div>
-      <button id="reset" class="button">Reset</button>
-    </header>
-
-    <section class="hud" aria-label="Game status">
-      <div><span>Player</span><strong id="playerHealth">100</strong></div>
-      <div><span>Fly</span><strong id="flyHealth">100</strong></div>
-      <div><span>Brain state</span><strong id="brainState">SEARCH</strong></div>
-      <div><span>Score</span><strong id="score">0</strong></div>
-    </section>
-
-    <section class="game-layout">
-      <div class="arena-wrap">
-        <canvas id="game" aria-label="Fruit fly game arena"></canvas>
-        <div class="help">Move: WASD / arrows · Attack: Space or click · Mobile: drag the joystick</div>
-        <div id="message" class="message hidden"></div>
-      </div>
-
-      <aside class="brain-lab">
-        <h2>🧠 Brain Lab</h2>
-        <p class="muted">Live model signals used by the fly controller.</p>
-        <div class="signal"><span>Threat</span><meter id="threat" min="0" max="1" value="0"></meter><b id="threatValue">0.00</b></div>
-        <div class="signal"><span>Target</span><meter id="target" min="0" max="1" value="0"></meter><b id="targetValue">0.00</b></div>
-        <div class="signal"><span>Escape</span><meter id="escape" min="0" max="1" value="0"></meter><b id="escapeValue">0.00</b></div>
-        <div class="signal"><span>Attack</span><meter id="attack" min="0" max="1" value="0"></meter><b id="attackValue">0.00</b></div>
-        <div class="signal"><span>Wall</span><meter id="wall" min="0" max="1" value="0"></meter><b id="wallValue">0.00</b></div>
-        <hr />
-        <h3>Controller output</h3>
-        <pre id="brainOutput">steer: 0.00\naccel: 0.00\nmode: SEARCH</pre>
-        <p class="science-note">Prototype only: this is an original lightweight browser model inspired by fly connectome research. It is not a literal Neurokernel simulation.</p>
-      </aside>
-    </section>
-  </main>
-  <script src="game.js" defer></script>
-</body>
-</html>
+<main class="app">
+<header class="topbar"><div><h1>🪰 Fruit Fly Brain — 3D</h1><p>Fight a fly whose decisions are driven by a real FlyWire connectome simulation.</p><p id="brainStatus" class="muted">Starting neural simulation…</p></div><button id="reset" class="button">Reset</button></header>
+<section class="hud"><div><span>Player HP</span><strong id="playerHealth">100</strong></div><div><span>Fly HP</span><strong id="flyHealth">100</strong></div><div><span>Brain state</span><strong id="brainState">LOADING</strong></div><div><span>Score</span><strong id="score">0</strong></div></section>
+<section class="game-layout"><div class="arena-wrap"><div id="game" aria-label="3D fruit fly game"></div><div class="help">WASD / arrows = move · Space / click = attack · R = reset</div><div id="message" class="message hidden"></div></div>
+<aside class="brain-lab"><h2>🧠 Live Fly Brain</h2><p class="muted">The game feeds sensory currents into the connectome and reads its neural population activity.</p><div class="telemetry"><b id="neurons">0 spikes / brain tick</b></div><canvas id="brainCanvas" aria-label="Live neural population activity"></canvas><h3>What is actually running?</h3><ul><li><b>139,255</b> FlyWire FAFB v783 neurons</li><li><b>2,698,236</b> directed connections</li><li>Leaky integrate-and-fire dynamics</li><li>Real measured wiring; game physics are a separate body layer</li></ul><p class="science-note">This is connectome-driven, not a claim that every movement is biologically exact. The brain supplies the neural activity; the 3D body converts descending/population activity into game movement.</p></aside></section>
+</main><script type="module" src="game.js"></script>
+</body></html>
