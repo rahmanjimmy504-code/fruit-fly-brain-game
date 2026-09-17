@@ -1,156 +1,34 @@
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
-const keys = new Set();
-const ui = {
-  playerHealth: document.getElementById('playerHealth'), flyHealth: document.getElementById('flyHealth'), brainState: document.getElementById('brainState'), score: document.getElementById('score'), message: document.getElementById('message'),
-  output: document.getElementById('brainOutput')
-};
-const meters = ['threat', 'target', 'escape', 'attack', 'wall'].reduce((o, k) => { o[k] = document.getElementById(k); o[k+'Value'] = document.getElementById(k+'Value'); return o; }, {});
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js';
 
-let W = 900, H = 600, last = performance.now(), score = 0, gameOver = false, attackCooldown = 0, flyAttackCooldown = 0;
-const player = { x: 180, y: 300, r: 16, speed: 300, health: 100, invuln: 0 };
-const fly = { x: 680, y: 300, vx: -40, vy: 0, r: 19, health: 100, phase: Math.random() * 10, brain: { threat: 0, target: 0, escape: 0, attack: 0, wall: 0, steer: 0, accel: 0, mode: 'SEARCH' } };
-
-function resize() {
-  const rect = canvas.getBoundingClientRect();
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  W = Math.max(360, rect.width); H = Math.max(360, rect.height);
-  canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-}
-window.addEventListener('resize', resize); resize();
-
-window.addEventListener('keydown', e => { keys.add(e.key.toLowerCase()); if (e.code === 'Space') { e.preventDefault(); attack(); } });
-window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
-canvas.addEventListener('pointerdown', e => { canvas.setPointerCapture(e.pointerId); attack(); });
-
-function reset() {
-  player.x = W * .22; player.y = H * .5; player.health = 100; player.invuln = 0;
-  fly.x = W * .76; fly.y = H * .5; fly.vx = -40; fly.vy = 0; fly.health = 100; fly.phase = Math.random() * 10;
-  score = 0; gameOver = false; attackCooldown = 0; flyAttackCooldown = 0; ui.message.classList.add('hidden');
-}
-document.getElementById('reset').addEventListener('click', reset);
-
-function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
-function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
-function norm(x, y) { const d = Math.hypot(x, y) || 1; return { x: x/d, y: y/d }; }
-
-// Original lightweight neural-state controller. The inputs/outputs mirror the
-// sensor -> controller -> motor architecture used by embodied fly experiments.
-function updateBrain(dt) {
-  const dx = player.x - fly.x, dy = player.y - fly.y, d = Math.hypot(dx, dy);
-  const target = clamp(1 - d / 500, 0, 1);
-  const threat = clamp(1 - d / 280, 0, 1) * (player.health > 0 ? 1 : 0);
-  const wall = clamp(Math.max(0, 90 - Math.min(fly.x, W-fly.x, fly.y, H-fly.y)) / 90, 0, 1);
-  const escape = clamp(threat * .85 + wall * .35, 0, 1);
-  const attack = clamp((1 - d / 155), 0, 1) * (1 - threat * .45);
-
-  // Recurrent state adds inertia so the fly does not teleport between decisions.
-  fly.brain.threat += (threat - fly.brain.threat) * Math.min(1, dt * 7);
-  fly.brain.target += (target - fly.brain.target) * Math.min(1, dt * 5);
-  fly.brain.escape += (escape - fly.brain.escape) * Math.min(1, dt * 8);
-  fly.brain.attack += (attack - fly.brain.attack) * Math.min(1, dt * 8);
-  fly.brain.wall += (wall - fly.brain.wall) * Math.min(1, dt * 8);
-
-  const toPlayer = norm(dx, dy);
-  const away = { x: -toPlayer.x, y: -toPlayer.y };
-  const wallX = (fly.x < 90 ? 1 : 0) - (fly.x > W-90 ? 1 : 0);
-  const wallY = (fly.y < 90 ? 1 : 0) - (fly.y > H-90 ? 1 : 0);
-  const wander = { x: Math.cos(fly.phase * 1.7), y: Math.sin(fly.phase * 2.1) };
-
-  let steer;
-  let mode;
-  if (fly.brain.escape > .58) {
-    steer = norm(away.x * 1.5 + wallX * 1.8 + wander.x * .35, away.y * 1.5 + wallY * 1.8 + wander.y * .35);
-    mode = 'EVADE';
-  } else if (fly.brain.attack > .72) {
-    steer = norm(toPlayer.x * .75 + wander.x * .25, toPlayer.y * .75 + wander.y * .25);
-    mode = 'ATTACK';
-  } else if (fly.brain.target > .15) {
-    steer = norm(toPlayer.x * .45 + wander.x * .75 + wallX, toPlayer.y * .45 + wander.y * .75 + wallY);
-    mode = 'TRACK';
-  } else {
-    steer = norm(wander.x + wallX, wander.y + wallY);
-    mode = 'SEARCH';
-  }
-  fly.brain.steer = steer.x;
-  fly.brain.accel = clamp(.25 + fly.brain.target * .55 + fly.brain.escape * .9, 0, 1);
-  fly.brain.mode = mode;
-}
-
-function movePlayer(dt) {
-  let x = 0, y = 0;
-  if (keys.has('a') || keys.has('arrowleft')) x--; if (keys.has('d') || keys.has('arrowright')) x++;
-  if (keys.has('w') || keys.has('arrowup')) y--; if (keys.has('s') || keys.has('arrowdown')) y++;
-  if (x || y) { const n = norm(x, y); player.x += n.x * player.speed * dt; player.y += n.y * player.speed * dt; }
-  player.x = clamp(player.x, player.r, W-player.r); player.y = clamp(player.y, player.r, H-player.r);
-  player.invuln = Math.max(0, player.invuln - dt);
-}
-
-function attack() {
-  if (gameOver || attackCooldown > 0) return;
-  attackCooldown = .35;
-  if (dist(player, fly) < 115) { fly.health = Math.max(0, fly.health - 18); score += 100; if (fly.health <= 0) endGame('YOU WIN! 🪰💥'); }
-}
-
-function updateFly(dt) {
-  fly.phase += dt;
-  updateBrain(dt);
-  const dx = fly.brain.steer, dy = Math.sin(fly.phase * 2.1) * .35 + (fly.y < H*.12 ? .4 : 0) - (fly.y > H*.88 ? .4 : 0);
-  const n = norm(dx, dy);
-  const desired = 75 + fly.brain.accel * 150;
-  fly.vx += (n.x * desired - fly.vx) * Math.min(1, dt * 2.8);
-  fly.vy += (n.y * desired - fly.vy) * Math.min(1, dt * 2.8);
-  fly.x += fly.vx * dt; fly.y += fly.vy * dt;
-  if (fly.x < fly.r || fly.x > W-fly.r) fly.vx *= -.8;
-  if (fly.y < fly.r || fly.y > H-fly.r) fly.vy *= -.8;
-  fly.x = clamp(fly.x, fly.r, W-fly.r); fly.y = clamp(fly.y, fly.r, H-fly.r);
-
-  flyAttackCooldown = Math.max(0, flyAttackCooldown - dt);
-  if (dist(player, fly) < 48 && flyAttackCooldown <= 0 && fly.brain.mode === 'ATTACK') {
-    flyAttackCooldown = 1.0; if (player.invuln <= 0) { player.health = Math.max(0, player.health - 8); player.invuln = .35; score = Math.max(0, score - 25); if (player.health <= 0) endGame('FLY WINS! 🪰'); }
-  }
-}
-
-function endGame(text) { gameOver = true; ui.message.textContent = text; ui.message.classList.remove('hidden'); }
-
-function drawBackground() {
-  ctx.fillStyle = '#0b1020'; ctx.fillRect(0,0,W,H);
-  ctx.strokeStyle = '#18243e'; ctx.lineWidth = 1;
-  for (let x=0;x<W;x+=45) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-  for (let y=0;y<H;y+=45) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
-}
-function drawEntity(x,y,r,body,accent) {
-  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fillStyle=body; ctx.fill(); ctx.lineWidth=3; ctx.strokeStyle=accent; ctx.stroke();
-}
-function draw() {
-  drawBackground();
-  // attack range
-  ctx.beginPath(); ctx.arc(player.x,player.y,115,0,Math.PI*2); ctx.strokeStyle='#35506b55'; ctx.stroke();
-  // player
-  drawEntity(player.x, player.y, player.r, '#4aa3ff', '#bfe6ff');
-  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(player.x+5,player.y-4,3,0,Math.PI*2); ctx.fill();
-  // fly wings
-  ctx.globalAlpha=.32; ctx.fillStyle='#dce8ff'; ctx.beginPath(); ctx.ellipse(fly.x-12,fly.y-12,20,9,-.5,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.ellipse(fly.x+12,fly.y-12,20,9,.5,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
-  drawEntity(fly.x, fly.y, fly.r, '#161922', '#d8a55a');
-  ctx.fillStyle='#ff536b'; ctx.beginPath(); ctx.arc(fly.x-6,fly.y-5,3,0,Math.PI*2); ctx.arc(fly.x+6,fly.y-5,3,0,Math.PI*2); ctx.fill();
-  // health bars
-  bar(player.x-30,player.y-30,60,6,player.health/100); bar(fly.x-35,fly.y-34,70,6,fly.health/100);
-  if (!gameOver) {
-    ctx.fillStyle='#8796b8'; ctx.font='12px system-ui'; ctx.fillText(fly.brain.mode, fly.x-25, fly.y+39);
-  }
-}
-function bar(x,y,w,h,p) { ctx.fillStyle='#111827'; ctx.fillRect(x,y,w,h); ctx.fillStyle='#61d58c'; ctx.fillRect(x,y,w*clamp(p,0,1),h); }
-
-function updateUI() {
-  ui.playerHealth.textContent = Math.round(player.health); ui.flyHealth.textContent = Math.round(fly.health); ui.brainState.textContent = fly.brain.mode; ui.score.textContent = score;
-  for (const k of ['threat','target','escape','attack','wall']) { const v=fly.brain[k]; meters[k].value=v; meters[k+'Value'].textContent=v.toFixed(2); }
-  ui.output.textContent = `steer: ${fly.brain.steer.toFixed(2)}\naccel: ${fly.brain.accel.toFixed(2)}\nmode: ${fly.brain.mode}`;
-}
-
-function loop(now) {
-  const dt = Math.min(.033, (now-last)/1000); last=now;
-  if (!gameOver) { attackCooldown=Math.max(0,attackCooldown-dt); movePlayer(dt); updateFly(dt); }
-  draw(); updateUI(); requestAnimationFrame(loop);
-}
-reset(); requestAnimationFrame(loop);
+const worker=new Worker('./brain-worker.js');
+const $=id=>document.getElementById(id);
+const state={ready:false,groups:[],spikes:[],playerHP:100,flyHP:100,score:0,over:false,hitCooldown:0};
+const keys=new Set();
+const player={x:0,z:7,speed:5};
+const fly={x:0,y:1.8,z:0,vx:0,vy:0,vz:0,heading:0,phase:Math.random()*10};
+const SIZE=22;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x07101b);scene.fog=new THREE.Fog(0x07101b,18,55);
+const camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.05,100);camera.position.set(0,10,18);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;
+$('game').replaceWith(renderer.domElement);renderer.domElement.id='game';
+scene.add(new THREE.HemisphereLight(0x9ecbff,0x152030,2.2));const sun=new THREE.DirectionalLight(0xffffff,3);sun.position.set(4,12,6);sun.castShadow=true;scene.add(sun);
+const floor=new THREE.Mesh(new THREE.CylinderGeometry(SIZE,SIZE,.35,64),new THREE.MeshStandardMaterial({color:0x172b23,roughness:.95}));floor.position.y=-.2;floor.receiveShadow=true;scene.add(floor);
+const ring=new THREE.Mesh(new THREE.TorusGeometry(SIZE,.12,8,96),new THREE.MeshBasicMaterial({color:0x39e6a1}));ring.rotation.x=Math.PI/2;ring.position.y=.02;scene.add(ring);
+function makeFly(){const g=new THREE.Group();const body=new THREE.Mesh(new THREE.SphereGeometry(.75,20,14),new THREE.MeshStandardMaterial({color:0x272727,roughness:.5}));body.scale.set(.75,1,.95);body.castShadow=true;g.add(body);const head=new THREE.Mesh(new THREE.SphereGeometry(.43,18,12),new THREE.MeshStandardMaterial({color:0x171717}));head.position.set(0,.03,.75);g.add(head);const eyeMat=new THREE.MeshStandardMaterial({color:0xb22cff,emissive:0x4b0b66,emissiveIntensity:2});for(const sx of[-.22,.22]){const e=new THREE.Mesh(new THREE.SphereGeometry(.16,12,8),eyeMat);e.position.set(sx,.12,1.02);g.add(e);}const wm=new THREE.MeshStandardMaterial({color:0xa9e7ff,transparent:true,opacity:.45,side:THREE.DoubleSide});for(const sx of[-1,1]){const w=new THREE.Mesh(new THREE.SphereGeometry(.55,16,8),wm);w.scale.set(1.9,.08,.75);w.position.set(sx*.65,.35,.05);g.add(w);}return g;}
+const flyMesh=makeFly();scene.add(flyMesh);
+const playerMesh=new THREE.Mesh(new THREE.SphereGeometry(.55,20,12),new THREE.MeshStandardMaterial({color:0x39a7ff,emissive:0x073d6d,emissiveIntensity:1.5}));playerMesh.castShadow=true;scene.add(playerMesh);
+const foods=[];for(let i=0;i<5;i++){const a=i*Math.PI*2/5+.4,r=6+Math.random()*6,m=new THREE.Mesh(new THREE.SphereGeometry(.28,12,8),new THREE.MeshStandardMaterial({color:0xff6b35,emissive:0x42120a,emissiveIntensity:1}));m.position.set(Math.cos(a)*r,.28,Math.sin(a)*r);m.userData.active=true;scene.add(m);foods.push(m);}
+function dist(a,b){return Math.hypot(a.x-b.x,a.z-b.z);}function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function norm(name){const i=state.groups.indexOf(name);return i>=0?Math.min(1,state.spikes[i]/100):0;}
+function sendStimuli(){if(!state.ready)return;const d=dist(fly,player),threat=clamp(1-d/9,0,1),food=foods.find(f=>f.userData.active),fd=food?Math.hypot(fly.x-food.position.x,fly.z-food.position.z):99,foodSignal=clamp(1-fd/10,0,1);worker.postMessage({type:'stimuli',stimuli:{VIS_ME:.18+threat*.8,VIS_LPTC:threat, VIS_LO:threat*.4,VIS_R1R6:.25,OLF_ORN_FOOD:foodSignal*.8,MECH_BRISTLE:d<1.4?1.5:0,MECH_JO:.08}});}
+worker.onmessage=e=>{const m=e.data;if(m.type==='status'){$('brainStatus').textContent=m.message;return;}if(m.type==='ready'){state.ready=true;state.groups=m.groups;state.spikes=new Array(m.groups.length).fill(0);$('brainStatus').textContent=`REAL CONNECTOME ONLINE · ${m.neurons.toLocaleString()} neurons · ${m.connections.toLocaleString()} connections`;worker.postMessage({type:'start'});return;}if(m.type==='tick'){state.spikes=m.groups;const approach=norm('CX_PFN')*.35+norm('CX_FC')*.3+norm('MB_MBON_APP')*.2+norm('LH_APP')*.15;const threat=norm('VIS_LPTC')*.45+norm('MECH_BRISTLE')*.25+norm('GNG_DESC')*.15+norm('CX_HDELTA')*.15;const turn=norm('CX_HDELTA');const motor=norm('GNG_DESC')+norm('VNC_CPG');const food=foods.find(f=>f.userData.active);let tx=0,tz=0;if(food){tx=food.position.x-fly.x;tz=food.position.z-fly.z;const l=Math.hypot(tx,tz)||1;tx/=l;tz/=l;}const px=player.x-fly.x,pz=player.z-fly.z,pl=Math.hypot(px,pz)||1;const fleeX=-px/pl,fleeZ=-pz/pl;fly.heading+=(turn-.15)*(threat>.25?1.5:.6);let dx=Math.cos(fly.heading),dz=Math.sin(fly.heading);if(threat>.18){dx=fleeX*.8+dx*.2;dz=fleeZ*.8+dz*.2;}else if(approach>.08){dx=dx*.35+tx*.65;dz=dz*.35+tz*.65;}const l=Math.hypot(dx,dz)||1;dx/=l;dz/=l;const drive=clamp(.25+motor*.7+approach*.8+threat,0,1);fly.vx+=(dx*(.25+drive*.5)-fly.vx)*.25;fly.vz+=(dz*(.25+drive*.5)-fly.vz)*.25;fly.x+=fly.vx;fly.z+=fly.vz;fly.y=1.7+Math.sin(performance.now()/130+fly.phase)*.22;if(Math.abs(fly.x)>SIZE-1)fly.vx*=-.9;if(Math.abs(fly.z)>SIZE-1)fly.vz*=-.9;flyMesh.position.set(fly.x,fly.y,fly.z);flyMesh.rotation.y=-Math.atan2(fly.vz,fly.vx)+Math.PI/2;$('brainState').textContent=threat>.3?'ESCAPE':approach>.12?'SEEK FOOD':motor>.18?'MOVE':'IDLE';$('neurons').textContent=`${m.total.toLocaleString()} spikes / brain tick`;drawBrain();}};
+worker.onerror=()=>{$('brainStatus').textContent='Brain worker failed to load.';};worker.postMessage({type:'init'});
+function drawBrain(){const c=$('brainCanvas'),x=c.getContext('2d'),w=c.width=c.clientWidth*devicePixelRatio,h=c.height=c.clientHeight*devicePixelRatio;x.clearRect(0,0,w,h);x.fillStyle='#07101b';x.fillRect(0,0,w,h);const names=['VIS_ME','VIS_LPTC','OLF_ORN_FOOD','MECH_BRISTLE','MECH_JO','CX_PFN','CX_FC','CX_HDELTA','GNG_DESC','VNC_CPG'];for(let i=0;i<names.length;i++){const v=norm(names[i]),bw=w/names.length-5,bh=v*(h-30);x.fillStyle=v>.25?'#ff5c8a':'#38e8a4';x.fillRect(i*w/names.length+2,h-22-bh,bw,bh);x.fillStyle='#a9c0d6';x.font=`${Math.max(9,10*devicePixelRatio)}px sans-serif`;x.fillText(names[i].replace('OLF_ORN_','').replace('MECH_',''),i*w/names.length+2,h-6);}}
+function attack(){if(state.over||state.hitCooldown>0)return;state.hitCooldown=.35;if(dist(player,fly)<2.1){state.flyHP=Math.max(0,state.flyHP-18);state.score+=18;if(!state.flyHP)end(true);}else worker.postMessage({type:'stimuli',stimuli:{MECH_BRISTLE:1.8}});}
+function end(win){state.over=true;$('message').textContent=win?'🧠 Brain-driven fly defeated!':'🪰 The fly wins!';$('message').classList.remove('hidden');}
+function reset(){state.playerHP=100;state.flyHP=100;state.score=0;state.over=false;player.x=0;player.z=7;fly.x=0;fly.z=0;fly.vx=fly.vz=0;foods.forEach(f=>{f.userData.active=true;f.visible=true;});worker.postMessage({type:'reset'});$('message').classList.add('hidden');}
+function playerStep(dt){let x=0,z=0;if(keys.has('w')||keys.has('arrowup'))z--;if(keys.has('s')||keys.has('arrowdown'))z++;if(keys.has('a')||keys.has('arrowleft'))x--;if(keys.has('d')||keys.has('arrowright'))x++;const l=Math.hypot(x,z)||1;player.x+=x/l*5*dt;player.z+=z/l*5*dt;player.x=clamp(player.x,-SIZE+1,SIZE-1);player.z=clamp(player.z,-SIZE+1,SIZE-1);playerMesh.position.set(player.x,.6,player.z);}
+function combat(dt){state.hitCooldown=Math.max(0,state.hitCooldown-dt);if(dist(player,fly)<1.15&&state.hitCooldown<=0&&!state.over){state.playerHP=Math.max(0,state.playerHP-10);state.hitCooldown=.8;if(!state.playerHP)end(false);}}
+function ui(){ $('playerHealth').textContent=Math.ceil(state.playerHP);$('flyHealth').textContent=Math.ceil(state.flyHP);$('score').textContent=state.score; }
+let last=performance.now();function animate(t){requestAnimationFrame(animate);const dt=Math.min(.05,(t-last)/1000);last=t;if(!state.over)playerStep(dt);combat(dt);sendStimuli();camera.position.lerp(new THREE.Vector3(player.x,10,player.z+14),.045);camera.lookAt(new THREE.Vector3(player.x,.7,player.z));ui();renderer.render(scene,camera);}
+animate(0);addEventListener('keydown',e=>{keys.add(e.key.toLowerCase());if(e.code==='Space'){e.preventDefault();attack();}if(e.key.toLowerCase()==='r')reset();});addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));renderer.domElement.addEventListener('pointerdown',attack);$('reset').addEventListener('click',reset);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});reset();
