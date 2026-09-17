@@ -13,7 +13,7 @@
   <div>
     <h1>🪰 Fruit Fly Brain — 3D</h1>
     <p>Fight a fly whose decisions are driven by a real FlyWire connectome simulation.</p>
-    <p id="brainStatus" class="muted">Starting 3D engine…</p>
+    <p id="brainStatus" class="muted">Loading 3D engine…</p>
   </div>
   <button id="reset" class="button">Reset</button>
 </header>
@@ -45,8 +45,35 @@
   </aside>
 </section>
 </main>
-<!-- Use the classic Three.js build so the game still starts on browsers that block ES-module CDN imports. -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r186/three.min.js"></script>
-<script src="game.js"></script>
+<script>
+// Load Three.js with fallbacks, then start the game. This is deliberately a classic
+// browser build because it is more reliable on Android browsers than ES modules.
+(function(){
+  const status=document.getElementById('brainStatus');
+  const sources=[
+    'https://cdnjs.cloudflare.com/ajax/libs/three.js/r186/three.min.js',
+    'https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.min.js',
+    'https://unpkg.com/three@0.186.0/build/three.min.js'
+  ];
+  function load(i){
+    if(i>=sources.length){
+      status.textContent='3D engine could not load. Check your Android browser/network or disable strict content blocking.';
+      return;
+    }
+    status.textContent='Loading 3D engine… '+(i+1)+'/'+sources.length;
+    const s=document.createElement('script');
+    s.src=sources[i];
+    s.onload=function(){
+      if(window.THREE){
+        status.textContent='3D engine ready — starting game…';
+        const g=document.createElement('script');g.src='game.js';document.body.appendChild(g);
+      }else load(i+1);
+    };
+    s.onerror=function(){load(i+1)};
+    document.head.appendChild(s);
+  }
+  load(0);
+})();
+</script>
 </body>
 </html>
