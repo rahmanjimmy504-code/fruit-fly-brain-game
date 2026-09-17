@@ -1,14 +1,52 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#07101b">
-<title>Fruit Fly Brain 3D</title><link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07101b">
+<title>Fruit Fly Brain 3D</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 <main class="app">
-<header class="topbar"><div><h1>🪰 Fruit Fly Brain — 3D</h1><p>Fight a fly whose decisions are driven by a real FlyWire connectome simulation.</p><p id="brainStatus" class="muted">Starting neural simulation…</p></div><button id="reset" class="button">Reset</button></header>
-<section class="hud"><div><span>Player HP</span><strong id="playerHealth">100</strong></div><div><span>Fly HP</span><strong id="flyHealth">100</strong></div><div><span>Brain state</span><strong id="brainState">LOADING</strong></div><div><span>Score</span><strong id="score">0</strong></div></section>
-<section class="game-layout"><div class="arena-wrap"><div id="game" aria-label="3D fruit fly game"></div><div class="help">WASD / arrows = move · Space / click = attack · R = reset</div><div id="message" class="message hidden"></div></div>
-<aside class="brain-lab"><h2>🧠 Live Fly Brain</h2><p class="muted">The game feeds sensory currents into the connectome and reads its neural population activity.</p><div class="telemetry"><b id="neurons">0 spikes / brain tick</b></div><canvas id="brainCanvas" aria-label="Live neural population activity"></canvas><h3>What is actually running?</h3><ul><li><b>139,255</b> FlyWire FAFB v783 neurons</li><li><b>2,698,236</b> directed connections</li><li>Leaky integrate-and-fire dynamics</li><li>Real measured wiring; game physics are a separate body layer</li></ul><p class="science-note">This is connectome-driven, not a claim that every movement is biologically exact. The brain supplies the neural activity; the 3D body converts descending/population activity into game movement.</p></aside></section>
-</main><script type="module" src="game.js"></script>
-</body></html>
+<header class="topbar">
+  <div>
+    <h1>🪰 Fruit Fly Brain — 3D</h1>
+    <p>Fight a fly whose decisions are driven by a real FlyWire connectome simulation.</p>
+    <p id="brainStatus" class="muted">Starting 3D engine…</p>
+  </div>
+  <button id="reset" class="button">Reset</button>
+</header>
+<section class="hud">
+  <div><span>Player HP</span><strong id="playerHealth">100</strong></div>
+  <div><span>Fly HP</span><strong id="flyHealth">100</strong></div>
+  <div><span>Brain state</span><strong id="brainState">STARTING</strong></div>
+  <div><span>Score</span><strong id="score">0</strong></div>
+</section>
+<section class="game-layout">
+  <div class="arena-wrap">
+    <div id="game" aria-label="3D fruit fly game"></div>
+    <div class="help">WASD / arrows = move · Space / click = attack · R = reset</div>
+    <div id="message" class="message hidden"></div>
+  </div>
+  <aside class="brain-lab">
+    <h2>🧠 Live Fly Brain</h2>
+    <p class="muted">The game feeds sensory currents into the connectome and reads its neural population activity.</p>
+    <div class="telemetry"><b id="neurons">Waiting for brain…</b></div>
+    <canvas id="brainCanvas" aria-label="Live neural population activity"></canvas>
+    <h3>What is actually running?</h3>
+    <ul>
+      <li><b>139,255</b> FlyWire FAFB v783 neurons</li>
+      <li><b>2,698,236</b> directed connections</li>
+      <li>Leaky integrate-and-fire dynamics</li>
+      <li>Real measured wiring; game physics are a separate body layer</li>
+    </ul>
+    <p class="science-note">This is connectome-driven, not a claim that every movement is biologically exact. The brain supplies the neural activity; the 3D body converts descending/population activity into game movement.</p>
+  </aside>
+</section>
+</main>
+<!-- Use the classic Three.js build so the game still starts on browsers that block ES-module CDN imports. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r186/three.min.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
