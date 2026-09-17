@@ -1,0 +1,4 @@
+# Make GitHub's language breakdown reflect the actual source languages.
+*.js linguist-language=JavaScript
+*.css linguist-language=CSS
+*.html linguist-language=HTML
