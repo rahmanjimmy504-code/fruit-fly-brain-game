@@ -12,7 +12,7 @@
 <header class="topbar">
   <div>
     <h1>🪰 Fruit Fly Brain — 3D</h1>
-    <p>Browser-native 3D-style arena driven by a fly-connectome simulation.</p>
+    <p>Browser-native 3D-style arena driven by the fly.ai MaleCNS connectome.</p>
     <p id="brainStatus" class="muted">Starting browser-native 3D renderer…</p>
   </div>
   <button id="reset" class="button">Reset</button>
@@ -38,18 +38,19 @@
   </div>
   <aside class="brain-lab">
     <h2>🧠 Live Fly Brain</h2>
-    <p class="muted">The game feeds sensory currents into the connectome and reads neural population activity.</p>
+    <p class="muted">The game feeds sensory currents into real fly cell types and reads activity from the connectome.</p>
     <div class="telemetry"><b id="neurons">Waiting for brain…</b></div>
     <canvas id="brainCanvas" aria-label="Live neural population activity"></canvas>
     <h3>Connectome</h3>
     <ul>
-      <li><b>139,255</b> FlyWire FAFB v783 neurons</li>
-      <li><b>2,698,236</b> directed connections</li>
-      <li>Leaky integrate-and-fire dynamics</li>
+      <li><b>166,700</b> MaleCNS neurons</li>
+      <li><b>25,088,107</b> directed connections</li>
+      <li>Fly.ai web-export weights with log-quantized synapses</li>
+      <li>20 ms leaky integrate-and-fire dynamics</li>
       <li>Brain simulation runs separately from the visual body</li>
     </ul>
-    <h3>Stonkfly-inspired model ideas</h3>
-    <p class="science-note">The Stonkfly project uses a much larger retained MaleCNS graph and wiring-constrained spiking dynamics. Its native implementation needs Python/C++ and several GB of data, so it cannot be copied directly into GitHub Pages. This browser game instead keeps the same useful separation: sensory input → spiking network → fixed population readout → body behavior.</p>
+    <h3>Fly.ai integration</h3>
+    <p class="science-note">The browser worker now consumes fly.ai's committed web export: compressed connectome weights plus neuron metadata. Real fly cell types such as LC4, LPLC2, LPLC1 and LC10a are used as sensory entry points, while descending/motor populations provide the behaviour readout. The renderer remains local and does not require Three.js or another external CDN.</p>
   </aside>
 </section>
 </main>
