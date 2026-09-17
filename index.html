@@ -9,51 +9,24 @@
 </head>
 <body>
 <main class="app">
-<header class="topbar">
-  <div>
-    <h1>🪰 Fruit Fly Brain — 3D</h1>
-    <p>Browser-native 3D-style arena driven by the fly.ai MaleCNS connectome.</p>
-    <p id="brainStatus" class="muted">Starting browser-native 3D renderer…</p>
-  </div>
-  <button id="reset" class="button">Reset</button>
-</header>
-<section class="hud">
-  <div><span>Player HP</span><strong id="playerHealth">100</strong></div>
-  <div><span>Fly HP</span><strong id="flyHealth">100</strong></div>
-  <div><span>Brain state</span><strong id="brainState">STARTING</strong></div>
-  <div><span>Score</span><strong id="score">0</strong></div>
-</section>
+<header class="topbar"><div><h1>🪰 Fruit Fly Brain — 3D</h1><p>Real fly.ai MaleCNS connectome driving the fly's behaviour.</p><p id="brainStatus" class="muted">Starting brain…</p></div><button id="reset" class="button">Reset</button></header>
+<section class="hud"><div><span>Player HP</span><strong id="playerHealth">100</strong></div><div><span>Fly HP</span><strong id="flyHealth">100</strong></div><div><span>Brain state</span><strong id="brainState">STARTING</strong></div><div><span>Score</span><strong id="score">0</strong></div></section>
 <section class="game-layout">
-  <div class="arena-wrap">
-    <canvas id="game" aria-label="3D fruit fly game"></canvas>
-    <div class="help">WASD / arrows / touch pad = move · Space / tap ATTACK = attack · R = reset</div>
-    <div id="touchControls" class="touch-controls" aria-label="Touch controls">
-      <div class="dpad">
-        <button data-key="arrowup">▲</button>
-        <div><button data-key="arrowleft">◀</button><button data-key="arrowdown">▼</button><button data-key="arrowright">▶</button></div>
-      </div>
-      <button id="attackTouch" class="attack-touch">ATTACK</button>
-    </div>
-    <div id="message" class="message hidden"></div>
+<div class="arena-wrap">
+<canvas id="game" aria-label="3D fruit fly game"></canvas>
+<div class="help">WASD / arrows = move · Space / ATTACK = attack · R = reset</div>
+<div id="touchControls" class="touch-controls" aria-label="Mobile controls">
+  <div id="joystick" class="joystick" aria-label="Movement joystick"><div class="joystick-ring"><div id="stick" class="joystick-stick"></div></div></div>
+  <div class="action-buttons">
+    <button id="attackTouch" class="action attack" type="button">⚔<span>ATTACK</span></button>
+    <button id="defendTouch" class="action defend" type="button">🛡<span>DEFEND</span></button>
+    <button id="dashTouch" class="action dash" type="button">⚡<span>DASH</span></button>
+    <button id="abilityTouch" class="action ability" type="button">🧠<span>BRAIN</span></button>
   </div>
-  <aside class="brain-lab">
-    <h2>🧠 Live Fly Brain</h2>
-    <p class="muted">The game feeds sensory currents into real fly cell types and reads activity from the connectome.</p>
-    <div class="telemetry"><b id="neurons">Waiting for brain…</b></div>
-    <canvas id="brainCanvas" aria-label="Live neural population activity"></canvas>
-    <h3>Connectome</h3>
-    <ul>
-      <li><b>166,700</b> MaleCNS neurons</li>
-      <li><b>25,088,107</b> directed connections</li>
-      <li>Fly.ai web-export weights with log-quantized synapses</li>
-      <li>20 ms leaky integrate-and-fire dynamics</li>
-      <li>Brain simulation runs separately from the visual body</li>
-    </ul>
-    <h3>Fly.ai integration</h3>
-    <p class="science-note">The browser worker now consumes fly.ai's committed web export: compressed connectome weights plus neuron metadata. Real fly cell types such as LC4, LPLC2, LPLC1 and LC10a are used as sensory entry points, while descending/motor populations provide the behaviour readout. The renderer remains local and does not require Three.js or another external CDN.</p>
-  </aside>
-</section>
-</main>
+</div>
+<div id="message" class="message hidden"></div>
+</div>
+<aside class="brain-lab"><h2>🧠 Live Fly Brain</h2><p class="muted">Sensory currents enter real fly cell types; the full MaleCNS connectome produces the live neural readout.</p><div class="telemetry"><b id="neurons">Waiting for brain…</b></div><canvas id="brainCanvas" aria-label="Live neural population activity"></canvas><h3>Connectome</h3><ul><li><b>166,700</b> MaleCNS neurons</li><li><b>25,088,107</b> directed connections</li><li>Fly.ai web-export weights</li><li>20 ms leaky integrate-and-fire dynamics</li></ul><h3>Controls</h3><p class="science-note">On phones/tablets, drag the joystick to move. Use ATTACK to strike, DEFEND to reduce incoming damage, DASH for a burst of movement, and BRAIN to send a strong sensory pulse into the fly model.</p></aside>
+</section></main>
 <script src="game.js"></script>
-</body>
-</html>
+</body></html>
