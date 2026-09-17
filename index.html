@@ -4,29 +4,29 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#07101b">
-<title>Fruit Fly Brain 3D</title>
+<title>Fruit Fly Brain Arena</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <main class="app">
-<header class="topbar"><div><h1>🪰 Fruit Fly Brain — 3D</h1><p>Real fly.ai MaleCNS connectome driving the fly's behaviour.</p><p id="brainStatus" class="muted">Starting brain…</p></div><button id="reset" class="button">Reset</button></header>
-<section class="hud"><div><span>Player HP</span><strong id="playerHealth">100</strong></div><div><span>Fly HP</span><strong id="flyHealth">100</strong></div><div><span>Brain state</span><strong id="brainState">STARTING</strong></div><div><span>Score</span><strong id="score">0</strong></div></section>
+<header class="topbar"><div><h1>🪰 Fruit Fly Brain Arena</h1><p>Fight a fly whose behaviour is driven by the real fly.ai MaleCNS connectome.</p><p id="brainStatus" class="muted">Starting real brain…</p></div><button id="reset" class="button">Reset</button></header>
+<section class="hud"><div><span>Player HP</span><strong id="playerHealth">100</strong></div><div><span>Fly HP</span><strong id="flyHealth">100</strong></div><div><span>Brain</span><strong id="brainState">OFFLINE</strong></div><div><span>Score</span><strong id="score">0</strong></div></section>
 <section class="game-layout">
 <div class="arena-wrap">
-<canvas id="game" aria-label="3D fruit fly game"></canvas>
-<div class="help">WASD / arrows = move · Space / ATTACK = attack · R = reset</div>
+<canvas id="game" aria-label="Fruit Fly Brain Arena game"></canvas>
+<div class="help">WASD / arrows move · Space attack · E defend · Shift dash · Q brain pulse · R reset</div>
 <div id="touchControls" class="touch-controls" aria-label="Mobile controls">
   <div id="joystick" class="joystick" aria-label="Movement joystick"><div class="joystick-ring"><div id="stick" class="joystick-stick"></div></div></div>
   <div class="action-buttons">
     <button id="attackTouch" class="action attack" type="button">⚔<span>ATTACK</span></button>
     <button id="defendTouch" class="action defend" type="button">🛡<span>DEFEND</span></button>
     <button id="dashTouch" class="action dash" type="button">⚡<span>DASH</span></button>
-    <button id="abilityTouch" class="action ability" type="button">🧠<span>BRAIN</span></button>
+    <button id="abilityTouch" class="action ability" type="button">🧠<span>BRAIN PULSE</span></button>
   </div>
 </div>
 <div id="message" class="message hidden"></div>
 </div>
-<aside class="brain-lab"><h2>🧠 Live Fly Brain</h2><p class="muted">Sensory currents enter real fly cell types; the full MaleCNS connectome produces the live neural readout.</p><div class="telemetry"><b id="neurons">Waiting for brain…</b></div><canvas id="brainCanvas" aria-label="Live neural population activity"></canvas><h3>Connectome</h3><ul><li><b>166,700</b> MaleCNS neurons</li><li><b>25,088,107</b> directed connections</li><li>Fly.ai web-export weights</li><li>20 ms leaky integrate-and-fire dynamics</li></ul><h3>Controls</h3><p class="science-note">On phones/tablets, drag the joystick to move. Use ATTACK to strike, DEFEND to reduce incoming damage, DASH for a burst of movement, and BRAIN to send a strong sensory pulse into the fly model.</p></aside>
+<aside class="brain-lab"><h2>🧠 Live Fly Brain</h2><p class="muted">The game remains playable while the real connectome downloads and initializes in a background worker.</p><div class="telemetry"><b id="neurons">Waiting for brain…</b></div><canvas id="brainCanvas" aria-label="Live neural population activity"></canvas><h3>Real connectome</h3><ul><li><b>166,700</b> MaleCNS neurons</li><li><b>25,088,107</b> directed connections</li><li>fly.ai web-export weights</li><li>20 ms leaky integrate-and-fire dynamics</li></ul><h3>How to play</h3><p class="science-note">Collect orange food for points, stay away from the fly's bite, and attack when you are close. DEFEND reduces damage, DASH gives a burst of movement, and BRAIN PULSE sends a strong sensory signal into the real neural model.</p></aside>
 </section></main>
 <script src="game.js"></script>
 </body></html>
